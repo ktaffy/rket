@@ -59,19 +59,9 @@ export const useGameLoop = (currentVotePosition, onObstacleCleared) => {
     const checkCollision = useCallback((obstacle, playerPosition) => {
         const playerY = GAME_HEIGHT - 100;
 
-        console.log('Checking collision:', {
-            obstacleY: obstacle.y,
-            obstacleLanes: obstacle.lanes,
-            playerPosition: playerPosition,
-            playerY: playerY,
-            isInLane: obstacle.lanes.includes(playerPosition),
-            inRange: obstacle.y >= playerY - 100 && obstacle.y <= playerY + 100
-        });
-
         if (obstacle.lanes.includes(playerPosition) &&
-            obstacle.y >= playerY - 100 &&
-            obstacle.y <= playerY + 100) {
-            console.log('COLLISION DETECTED!');
+            obstacle.y >= playerY - 120 &&
+            obstacle.y <= playerY + 120) {
             return true;
         }
         return false;
