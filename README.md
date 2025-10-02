@@ -1,70 +1,27 @@
-# Getting Started with Create React App
+# $RKET - The Trenches Game Coin
+$RKET is more than just another memecoin. It’s an interactive, community-driven game where holders decide the fate of the rocket.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## The Game
+- A rocket flies through space, dodging obstacles.
+- The community votes on which direction the rocket should go next (left, center, right).
+- Each movement powered by how much votes each direction gets. spam the one you want.
+- The rocket’s journey becomes a living story, shaped by the collective decisions of the community.
 
-## Available Scripts
+## Why $RKET?
+- **Fun + Finance**: Blends the memecoin hype with an actual interactive game.
+- **Community-Controlled**: The rocket doesn’t move without its holders.
+- **Gamified Holding**: Owning $RKET isn’t just financial speculation—it’s participation in the mission.
 
-In the project directory, you can run:
+## Built With
+- ngl I built this quick with react and javascript, made it as simple as possible yet still very fun, look at the game site to see the market cap goals, and game score goals to see where we are at
 
-### `npm start`
+## Vision
+$RKET isn’t just about dodging obstacles. It’s about building a community experience where every token holder plays a role in the rocket’s survival. The higher the score, the more legendary the mission becomes.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 📢 Join the Mission
+- Grab some $RKET
+- Vote on the rocket’s next move
+- Be part of the journey to take $RKET beyond the moon
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+# Also check out my twitter, im tryna get more involved in the dev scene and make more cool community projects [Twitter/x](https://x.com/obsidianlglow)
