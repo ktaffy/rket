@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ref, set, onValue, runTransaction } from 'firebase / database';
+import { ref, set, onValue, runTransaction } from 'firebase/database';
 import { database } from '../firebase';
 
 const BASE_OBSTACLE_SPEED = 1.2;

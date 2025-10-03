@@ -4,8 +4,8 @@ import { useWindowSize } from 'react-use';
 import { GameCanvas } from './GameCanvas';
 import { VotingPanel } from './VotingPanel';
 import { GameStats } from './GameStats';
-import { useGameLoop } from '../hooks/useGameLoop';
-import { useVoting } from '../hooks/useVoting';
+import { useSharedGameLoop } from '../hooks/useSharedGameLoop';
+import { useSharedVoting } from '../hooks/useSharedVoting';
 import { MarketCapMilestones } from './MarketCapMilestones';
 import { ScoreMilestones } from './ScoreMilestones';
 
@@ -20,7 +20,8 @@ export const Game = () => {
         currentPosition,
         addVote,
         resetVotes,
-    } = useVoting();
+        isConnected
+    } = useSharedVoting();
 
     const {
         gameState,
@@ -29,8 +30,9 @@ export const Game = () => {
         resetGame,
         togglePause,
         GAME_HEIGHT,
-        LANE_WIDTH
-    } = useGameLoop(currentPosition, () => {
+        LANE_WIDTH,
+        isGameMaster
+    } = useSharedGameLoop(currentPosition, () => {
         setTimeout(() => {
             resetVotes();
             if (spawnObstacleRef.current) {
@@ -44,8 +46,11 @@ export const Game = () => {
     }, [spawnObstacle]);
 
     useEffect(() => {
-        spawnObstacle();
-    }, [spawnObstacle]);
+        if (isGameMaster) {
+            spawnObstacle();
+        }
+    }, [spawnObstacle, isGameMaster]);
+    
 
     const shouldShowConfetti = useCallback(() => {
         const { score, combo } = gameState;
