@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ref, set, onValue, runTransaction } from 'firebase/database';
+import { ref, set, onValue, runTransaction, remove } from 'firebase/database';
 import { database } from '../firebase';
 
 const BASE_OBSTACLE_SPEED = 1.2;
@@ -25,6 +25,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
     const animationFrameRef = useRef(null);
     const checkedObstacleIdRef = useRef(null);
     const isGameMasterRef = useRef(false);
+    const isResettingRef = useRef(false);
 
     useEffect(() => {
         const gameStateRef = ref(database, `${GAME_REF}/state`);
@@ -33,8 +34,8 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             const data = snapshot.val();
             if (data) {
                 setGameState(data);
-            } else {
-                // Initialize game state
+            } else if (isGameMasterRef.current && !isResettingRef.current) {
+                // Initialize game state only if we're game master
                 const initialState = {
                     position: 1,
                     score: 0,
@@ -120,7 +121,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
     }, []);
 
     useEffect(() => {
-        if (isGameMasterRef.current) {
+        if (isGameMasterRef.current && !gameState.isGameOver) {
             const gameStateRef = ref(database, `${GAME_REF}/state`);
             runTransaction(gameStateRef, (current) => {
                 if (current) {
@@ -129,7 +130,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
                 return current;
             });
         }
-    }, [currentVotePosition]);
+    }, [currentVotePosition, gameState.isGameOver]);
 
     const updateGameState = useCallback((updates) => {
         if (!isGameMasterRef.current) return;
@@ -144,7 +145,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
     }, []);
 
     const spawnObstacle = useCallback(() => {
-        if (!isGameMasterRef.current) return;
+        if (!isGameMasterRef.current || gameState.isGameOver) return;
 
         const lanes = [0, 1, 2];
         const occupiedLanes = [];
@@ -174,7 +175,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
 
         const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
         set(obstacleRef, newObstacle);
-    }, [gameState.round]);
+    }, [gameState.round, gameState.isGameOver]);
 
     const checkCollision = useCallback((obstacle, playerPosition) => {
         const playerY = GAME_HEIGHT - 100;
@@ -189,11 +190,17 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
 
     useEffect(() => {
         if (!isGameMasterRef.current || gameState.isGameOver || gameState.isPaused || !currentObstacle) {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
             return;
         }
 
         const gameLoop = () => {
-            if (!currentObstacle) return;
+            if (!currentObstacle || gameState.isGameOver) {
+                return;
+            }
 
             const newY = currentObstacle.y + currentObstacle.speed;
 
@@ -212,25 +219,43 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
                         isGameOver: newLives <= 0
                     });
 
+                    const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
+                    set(obstacleRef, null);
+
                     if (newLives <= 0) {
+                        // Game over - reset after delay
                         setTimeout(() => {
-                            updateGameState({
-                                position: 1,
-                                score: 0,
-                                lives: 3,
-                                combo: 0,
-                                isGameOver: false,
-                                isPaused: false,
-                                round: 0
-                            });
-                            onObstacleCleared();
+                            if (isGameMasterRef.current) {
+                                isResettingRef.current = true;
+
+                                // Clear obstacle first
+                                const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
+                                remove(obstacleRef);
+
+                                // Reset checked obstacle
+                                checkedObstacleIdRef.current = null;
+
+                                // Reset game state
+                                updateGameState({
+                                    position: 1,
+                                    score: 0,
+                                    lives: 3,
+                                    combo: 0,
+                                    isGameOver: false,
+                                    isPaused: false,
+                                    round: 0
+                                });
+
+                                // Trigger obstacle cleared to spawn new one
+                                setTimeout(() => {
+                                    isResettingRef.current = false;
+                                    onObstacleCleared();
+                                }, 500);
+                            }
                         }, 2000);
                     } else {
                         onObstacleCleared();
                     }
-
-                    const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
-                    set(obstacleRef, null);
                 } else {
                     const newCombo = gameState.combo + 1;
                     const comboMultiplier = Math.floor(newCombo / 5) + 1;
@@ -242,13 +267,14 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
                         round: gameState.round + 1
                     });
 
-                    onObstacleCleared();
                     const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
                     set(obstacleRef, null);
+                    onObstacleCleared();
                 }
             } else if (newY > GAME_HEIGHT + 50) {
                 const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
                 set(obstacleRef, null);
+                checkedObstacleIdRef.current = null;
             } else {
                 const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
                 set(obstacleRef, { ...currentObstacle, y: newY });
@@ -269,6 +295,14 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
     const resetGame = useCallback(() => {
         if (!isGameMasterRef.current) return;
 
+        isResettingRef.current = true;
+        checkedObstacleIdRef.current = null;
+
+        // Clear obstacle
+        const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
+        remove(obstacleRef);
+
+        // Reset game state
         updateGameState({
             position: 1,
             score: 0,
@@ -278,6 +312,10 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             isPaused: false,
             round: 0
         });
+
+        setTimeout(() => {
+            isResettingRef.current = false;
+        }, 500);
     }, [updateGameState]);
 
     const togglePause = useCallback(() => {
