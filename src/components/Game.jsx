@@ -73,7 +73,7 @@ export const Game = () => {
                 <div className="flex gap-6 items-center justify-center max-w-[1600px] mx-auto">
                     {/* LEFT SIDEBAR - Market Cap Milestones */}
                     <div className="hidden xl:block w-64 flex-shrink-0">
-                        <MarketCapMilestones contractAddress="FVvUHTxJCyDvJeoSVmfgRgy9DNKUP6CnjYxVLxA2pump" />
+                        <MarketCapMilestones contractAddress="89xyjrNn8WBAZbKhtRMZFzeLZYNmP3rygkEXGjcLpump" />
                     </div>
 
                     {/* CENTER - Main Game */}
@@ -95,7 +95,7 @@ export const Game = () => {
                                     </svg>
                                 </a>
                                 <a
-                                    href="https://x.com/i/communities/1234567890"
+                                    href="https://x.com/i/communities/1973952887618166988"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:opacity-70 transition-opacity"
