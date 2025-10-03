@@ -7,6 +7,9 @@ const GAME_HEIGHT = 600;
 const LANE_WIDTH = 200;
 const GAME_REF = 'game/current';
 
+// Check if this instance is the official game master
+const IS_OFFICIAL_GAME_MASTER = process.env.REACT_APP_OFFICIAL_GAME_MASTER === 'true';
+
 export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
     const [gameState, setGameState] = useState({
         position: 1,
@@ -17,7 +20,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
         isPaused: false,
         round: 0
     });
-    
+
     const [currentObstacle, setCurrentObstacle] = useState(null);
     const animationFrameRef = useRef(null);
     const checkedObstacleIdRef = useRef(null);
@@ -46,27 +49,56 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             }
         });
 
-        // Check if this client should be the "game master" (runs the game loop)
+        // Game master selection logic
         const gameMasterRef = ref(database, `${GAME_REF}/gameMaster`);
-        onValue(gameMasterRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                // No game master exists, claim it
-                set(gameMasterRef, { timestamp: Date.now() });
-                isGameMasterRef.current = true;
-            } else {
-                // Check if game master is stale (>10 seconds old)
+
+        if (IS_OFFICIAL_GAME_MASTER) {
+            // This is the official deployed instance - always claim game master
+            console.log('🚀 Official Game Master - Taking control');
+            set(gameMasterRef, {
+                timestamp: Date.now(),
+                isOfficial: true
+            });
+            isGameMasterRef.current = true;
+        } else {
+            // Regular client - only become game master if official one doesn't exist
+            onValue(gameMasterRef, (snapshot) => {
                 const data = snapshot.val();
-                if (Date.now() - data.timestamp > 10000) {
-                    set(gameMasterRef, { timestamp: Date.now() });
+
+                if (!data) {
+                    // No game master exists at all
+                    set(gameMasterRef, {
+                        timestamp: Date.now(),
+                        isOfficial: false
+                    });
                     isGameMasterRef.current = true;
+                    console.log('📡 Temporary Game Master - Waiting for official');
+                } else if (data.isOfficial) {
+                    // Official game master exists - stay as observer
+                    isGameMasterRef.current = false;
+                    console.log('👀 Observer mode - Official game master active');
+                } else if (Date.now() - data.timestamp > 10000) {
+                    // Temporary game master is stale - take over temporarily
+                    set(gameMasterRef, {
+                        timestamp: Date.now(),
+                        isOfficial: false
+                    });
+                    isGameMasterRef.current = true;
+                    console.log('📡 Temporary Game Master - Taking over from stale master');
+                } else {
+                    // Another temporary master exists and is active
+                    isGameMasterRef.current = false;
                 }
-            }
-        });
+            });
+        }
 
         // Heartbeat to maintain game master status
         const heartbeatInterval = setInterval(() => {
             if (isGameMasterRef.current) {
-                set(gameMasterRef, { timestamp: Date.now() });
+                set(gameMasterRef, {
+                    timestamp: Date.now(),
+                    isOfficial: IS_OFFICIAL_GAME_MASTER
+                });
             }
         }, 5000);
 
@@ -75,7 +107,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             clearInterval(heartbeatInterval);
         };
     }, []);
-    
+
     useEffect(() => {
         const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
 
@@ -86,7 +118,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
 
         return () => unsubscribe();
     }, []);
-    
+
     useEffect(() => {
         if (isGameMasterRef.current) {
             const gameStateRef = ref(database, `${GAME_REF}/state`);
@@ -98,7 +130,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             });
         }
     }, [currentVotePosition]);
-    
+
     const updateGameState = useCallback((updates) => {
         if (!isGameMasterRef.current) return;
 
@@ -110,7 +142,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             return current;
         });
     }, []);
-    
+
     const spawnObstacle = useCallback(() => {
         if (!isGameMasterRef.current) return;
 
@@ -154,7 +186,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
         }
         return false;
     }, []);
-    
+
     useEffect(() => {
         if (!isGameMasterRef.current || gameState.isGameOver || gameState.isPaused || !currentObstacle) {
             return;
@@ -233,7 +265,7 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
             }
         };
     }, [currentObstacle, gameState, currentVotePosition, checkCollision, updateGameState, onObstacleCleared]);
-    
+
     const resetGame = useCallback(() => {
         if (!isGameMasterRef.current) return;
 
@@ -264,5 +296,4 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
         LANE_WIDTH,
         isGameMaster: isGameMasterRef.current
     };
-
 }
