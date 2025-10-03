@@ -6,6 +6,8 @@ import { VotingPanel } from './VotingPanel';
 import { GameStats } from './GameStats';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useVoting } from '../hooks/useVoting';
+import { MarketCapMilestones } from './MarketCapMilestones';
+import { ScoreMilestones } from './ScoreMilestones';
 
 export const Game = () => {
     const { width, height } = useWindowSize();
@@ -62,69 +64,72 @@ export const Game = () => {
                 />
             )}
 
-            <div className="container mx-auto px-4 max-w-4xl">
-                {/* Header */}
-                <div className="text-center mb-6">
-                    <h1 className="text-5xl font-black text-white tracking-tighter">
-                        $RKET
-                    </h1>
-                </div>
-
-                {/* Stats */}
-                <div className="mb-6">
-                    <GameStats
-                        score={gameState.score}
-                        lives={gameState.lives}
-                        combo={gameState.combo}
-                    />
-                </div>
-
-                {/* Game Canvas */}
-                <div className="mb-6">
-                    <GameCanvas
-                        gameState={gameState}
-                        obstacles={currentObstacle ? [{
-                            id: 1,
-                            lanes: currentObstacle.lanes,
-                            y: currentObstacle.y,
-                            width: currentObstacle.width,
-                            height: currentObstacle.height
-                        }] : []}
-                        powerUps={[]}
-                        gameHeight={GAME_HEIGHT}
-                        laneWidth={LANE_WIDTH}
-                    />
-                </div>
-
-                {/* Instructions */}
-                <div className="text-center mb-4">
-                    <p className="text-white/50 text-sm">
-                        Spam to vote where rocket goes
-                    </p>
-                </div>
-
-                {/* Voting Panel */}
-                <div>
-                    <VotingPanel
-                        votes={votes}
-                        percentages={percentages}
-                        totalVotes={totalVotes}
-                        votingActive={!gameState.isGameOver && !gameState.isPaused}
-                        onVote={addVote}
-                    />
-                </div>
-
-                {/* Play Again Button (only shows on game over) */}
-                {gameState.isGameOver && (
-                    <div className="text-center mt-6">
-                        <button
-                            onClick={resetGame}
-                            className="bg-white text-black font-bold py-3 px-8 rounded-lg hover:bg-gray-200 transition-all"
-                        >
-                            Play Again
-                        </button>
+            <div className="container mx-auto px-4">
+                <div className="flex gap-8 items-start justify-center">
+                    {/* LEFT SIDEBAR - Market Cap Milestones */}
+                    <div className="hidden xl:block pt-20 ">
+                        <MarketCapMilestones contractAddress="BJTkv1hk9pxRjVgFvEruxV7YHZKmSifJEdm7fCTspump" />
                     </div>
-                )}
+
+                    {/* CENTER - Main Game */}
+                    <div className="max-w-4xl w-full">
+                        {/* Header */}
+                        <div className="text-center mb-6">
+                                <h1 className="text-5xl font-black text-white tracking-tighter">
+                                    $RKET
+                                </h1>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="mb-6">
+                            <GameStats
+                                score={gameState.score}
+                                lives={gameState.lives}
+                                combo={gameState.combo}
+                            />
+                        </div>
+
+                        {/* Game Canvas */}
+                        <div className="mb-6">
+                            <GameCanvas
+                                gameState={gameState}
+                                obstacles={currentObstacle ? [{
+                                    id: 1,
+                                    lanes: currentObstacle.lanes,
+                                    y: currentObstacle.y,
+                                    width: currentObstacle.width,
+                                    height: currentObstacle.height
+                                }] : []}
+                                powerUps={[]}
+                                gameHeight={GAME_HEIGHT}
+                                laneWidth={LANE_WIDTH}
+                            />
+                        </div>
+
+                        {/* Instructions */}
+                        <div className="text-center mb-4">
+                            <p className="text-white/50 text-sm">
+                                Spam to vote where rocket goes
+                            </p>
+                        </div>
+
+                        {/* Voting Panel */}
+                        <div>
+                            <VotingPanel
+                                votes={votes}
+                                percentages={percentages}
+                                totalVotes={totalVotes}
+                                votingActive={!gameState.isGameOver && !gameState.isPaused}
+                                onVote={addVote}
+                            />
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDEBAR - Score Milestones (placeholder) */}
+                    <div className="hidden xl:block w-48 pt-20">
+                        <ScoreMilestones currentScore={gameState.score} />
+                    </div>
+                </div>
             </div>
         </div>
     );
