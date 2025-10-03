@@ -202,83 +202,88 @@ export const useSharedGameLoop = (currentVotePosition, onObstacleCleared) => {
                 return;
             }
 
-            const newY = currentObstacle.y + currentObstacle.speed;
+            const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
 
-            if (checkedObstacleIdRef.current !== currentObstacle.id &&
-                newY >= GAME_HEIGHT - 180 &&
-                newY <= GAME_HEIGHT - 20) {
+            // Use transaction to atomically read and update obstacle position
+            runTransaction(obstacleRef, (current) => {
+                if (!current) return current;
 
-                checkedObstacleIdRef.current = currentObstacle.id;
+                const newY = current.y + current.speed;
 
-                if (checkCollision({ ...currentObstacle, y: newY }, currentVotePosition)) {
-                    const newLives = gameState.lives - 1;
+                // Check collision range
+                if (checkedObstacleIdRef.current !== current.id &&
+                    newY >= GAME_HEIGHT - 180 &&
+                    newY <= GAME_HEIGHT - 20) {
 
-                    updateGameState({
-                        lives: newLives,
-                        combo: 0,
-                        isGameOver: newLives <= 0
-                    });
+                    checkedObstacleIdRef.current = current.id;
 
-                    const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
-                    set(obstacleRef, null);
+                    if (checkCollision({ ...current, y: newY }, currentVotePosition)) {
+                        const newLives = gameState.lives - 1;
 
-                    if (newLives <= 0) {
-                        // Game over - reset after delay
-                        setTimeout(() => {
-                            if (isGameMasterRef.current) {
-                                isResettingRef.current = true;
+                        updateGameState({
+                            lives: newLives,
+                            combo: 0,
+                            isGameOver: newLives <= 0
+                        });
 
-                                // Clear obstacle first
-                                const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
-                                remove(obstacleRef);
+                        if (newLives <= 0) {
+                            // Game over - reset after delay
+                            setTimeout(() => {
+                                if (isGameMasterRef.current) {
+                                    isResettingRef.current = true;
 
-                                // Reset checked obstacle
-                                checkedObstacleIdRef.current = null;
+                                    // Clear obstacle first
+                                    const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
+                                    remove(obstacleRef);
 
-                                // Reset game state
-                                updateGameState({
-                                    position: 1,
-                                    score: 0,
-                                    lives: 3,
-                                    combo: 0,
-                                    isGameOver: false,
-                                    isPaused: false,
-                                    round: 0
-                                });
+                                    // Reset checked obstacle
+                                    checkedObstacleIdRef.current = null;
 
-                                // Trigger obstacle cleared to spawn new one
-                                setTimeout(() => {
-                                    isResettingRef.current = false;
-                                    onObstacleCleared();
-                                }, 500);
-                            }
-                        }, 2000);
+                                    // Reset game state
+                                    updateGameState({
+                                        position: 1,
+                                        score: 0,
+                                        lives: 3,
+                                        combo: 0,
+                                        isGameOver: false,
+                                        isPaused: false,
+                                        round: 0
+                                    });
+
+                                    // Trigger obstacle cleared to spawn new one
+                                    setTimeout(() => {
+                                        isResettingRef.current = false;
+                                        onObstacleCleared();
+                                    }, 500);
+                                }
+                            }, 2000);
+                        } else {
+                            onObstacleCleared();
+                        }
+
+                        return null; // Clear obstacle
                     } else {
+                        const newCombo = gameState.combo + 1;
+                        const comboMultiplier = Math.floor(newCombo / 5) + 1;
+                        const points = 10 * comboMultiplier;
+
+                        updateGameState({
+                            score: gameState.score + points,
+                            combo: newCombo,
+                            round: gameState.round + 1
+                        });
+
                         onObstacleCleared();
+                        return null; // Clear obstacle
                     }
+                } else if (newY > GAME_HEIGHT + 50) {
+                    checkedObstacleIdRef.current = null;
+                    return null; // Clear obstacle
                 } else {
-                    const newCombo = gameState.combo + 1;
-                    const comboMultiplier = Math.floor(newCombo / 5) + 1;
-                    const points = 10 * comboMultiplier;
-
-                    updateGameState({
-                        score: gameState.score + points,
-                        combo: newCombo,
-                        round: gameState.round + 1
-                    });
-
-                    const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
-                    set(obstacleRef, null);
-                    onObstacleCleared();
+                    // Update obstacle position
+                    return { ...current, y: newY };
                 }
-            } else if (newY > GAME_HEIGHT + 50) {
-                const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
-                set(obstacleRef, null);
-                checkedObstacleIdRef.current = null;
-            } else {
-                const obstacleRef = ref(database, `${GAME_REF}/obstacle`);
-                set(obstacleRef, { ...currentObstacle, y: newY });
-            }
+            });
 
             animationFrameRef.current = requestAnimationFrame(gameLoop);
         };
