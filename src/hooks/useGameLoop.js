@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const BASE_OBSTACLE_SPEED = 1.2;
+const BASE_OBSTACLE_SPEED = 1.5;
 const GAME_HEIGHT = 600;
 const LANE_WIDTH = 200;
 
@@ -41,8 +41,8 @@ export const useGameLoop = (currentVotePosition, onObstacleCleared) => {
             }
         }
 
-        const difficultyMultiplier = 1 + (gameState.round / 20);
-        const speed = BASE_OBSTACLE_SPEED * Math.min(difficultyMultiplier, 1.8);
+        const difficultyMultiplier = 1 + (gameState.round / 10);
+        const speed = BASE_OBSTACLE_SPEED * Math.min(difficultyMultiplier, 1.9);
 
         const obstacleId = Date.now();
 

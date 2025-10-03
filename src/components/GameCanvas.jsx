@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const GameCanvas = ({
@@ -9,8 +9,19 @@ export const GameCanvas = ({
     laneWidth = 200
 }) => {
     const { position, lives, combo } = gameState;
+    const [prevLives, setPrevLives] = useState(lives);
+    const [showCollision, setShowCollision] = useState(false);
 
     const totalWidth = laneWidth * 3;
+
+    // Detect collision (when lives decrease)
+    useEffect(() => {
+        if (lives < prevLives) {
+            setShowCollision(true);
+            setTimeout(() => setShowCollision(false), 500);
+        }
+        setPrevLives(lives);
+    }, [lives, prevLives]);
 
     const getPlayerX = () => {
         return position * laneWidth + laneWidth / 2 - 40;
@@ -26,8 +37,6 @@ export const GameCanvas = ({
         }
         return { bg: 'bg-[#ffa5c5]', icon: '⭐' };
     };
-
-    const shouldShake = lives !== gameState.lives;
 
     // Professional Black & White Rocket Component
     const Rocket = () => (
@@ -85,32 +94,85 @@ export const GameCanvas = ({
                     height: gameHeight,
                     margin: '0 auto'
                 }}
-                animate={shouldShake ? { x: [-10, 10, -10, 10, 0] } : {}}
-                transition={{ duration: 0.3 }}
+                animate={showCollision ? {
+                    x: [-10, 10, -8, 8, -5, 5, 0],
+                    scale: [1, 0.98, 1.02, 0.98, 1]
+                } : {
+                    x: 0,
+                    scale: 1
+                }}
+                transition={{
+                    duration: 0.4,
+                    ease: "easeInOut"
+                }}
             >
+
+
                 {/* Obstacles */}
                 <AnimatePresence>
                     {obstacles.map((obstacle) => (
-                        obstacle.lanes.map((lane, idx) => (
-                            <motion.div
-                                key={`${obstacle.id}-${lane}`}
-                                className="absolute bg-orange-500 rounded-lg shadow-lg"
-                                style={{
-                                    left: getObstacleX(lane),
-                                    top: obstacle.y,
-                                    width: obstacle.width,
-                                    height: obstacle.height,
-                                }}
-                                initial={{ scale: 0, rotate: -180 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                                    🚧
-                                </div>
-                            </motion.div>
-                        ))
+                        <div key={obstacle.id}>
+                            {obstacle.lanes.map((lane, idx) => (
+                                <motion.div
+                                    key={`${obstacle.id}-${lane}-${idx}`}
+                                    className="absolute"
+                                    style={{
+                                        left: getObstacleX(lane),
+                                        top: obstacle.y,
+                                        width: obstacle.width,
+                                        height: obstacle.height,
+                                    }}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{
+                                        opacity: 1,
+                                        scale: 1,
+                                        rotate: [0, 2, -2, 0]
+                                    }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    transition={{
+                                        rotate: { repeat: Infinity, duration: 4, ease: "easeInOut" }
+                                    }}
+                                >
+                                    <svg width="100%" height="100%" viewBox="0 0 180 40">
+                                        <defs>
+                                            <linearGradient id={`obstacleGrad-${obstacle.id}-${lane}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 1 }} />
+                                                <stop offset="50%" style={{ stopColor: '#e0e0e0', stopOpacity: 1 }} />
+                                                <stop offset="100%" style={{ stopColor: '#cccccc', stopOpacity: 1 }} />
+                                            </linearGradient>
+                                            <filter id={`glow-${obstacle.id}-${lane}`}>
+                                                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                                <feMerge>
+                                                    <feMergeNode in="coloredBlur" />
+                                                    <feMergeNode in="SourceGraphic" />
+                                                </feMerge>
+                                            </filter>
+                                        </defs>
+
+                                        {/* Main asteroid body */}
+                                        <path
+                                            d="M 20 20 Q 10 12, 25 8 T 60 5 T 95 8 Q 140 10, 155 18 Q 165 25, 158 32 Q 145 38, 110 37 T 70 35 Q 40 36, 28 32 Q 18 28, 20 20 Z"
+                                            fill={`url(#obstacleGrad-${obstacle.id}-${lane})`}
+                                            filter={`url(#glow-${obstacle.id}-${lane})`}
+                                        />
+
+                                        {/* Craters and details */}
+                                        <ellipse cx="45" cy="18" rx="8" ry="6" fill="#b0b0b0" opacity="0.5" />
+                                        <ellipse cx="85" cy="22" rx="10" ry="7" fill="#b0b0b0" opacity="0.5" />
+                                        <ellipse cx="120" cy="20" rx="7" ry="5" fill="#b0b0b0" opacity="0.5" />
+
+                                        {/* Edge highlights */}
+                                        <path
+                                            d="M 25 10 Q 30 8, 60 7"
+                                            stroke="#ffffff"
+                                            strokeWidth="2"
+                                            fill="none"
+                                            opacity="0.6"
+                                        />
+                                    </svg>
+                                </motion.div>
+                            ))}
+                        </div>
                     ))}
                 </AnimatePresence>
 
@@ -123,24 +185,25 @@ export const GameCanvas = ({
                                 key={powerUp.id}
                                 className="absolute"
                                 style={{
-                                    left: getObstacleX(powerUp.lane) + 60,
+                                    left: getObstacleX(powerUp.lane),
                                     top: powerUp.y,
                                     width: 60,
                                     height: 60,
                                 }}
-                                initial={{ scale: 0, rotate: 0 }}
+                                initial={{ opacity: 0, scale: 0 }}
                                 animate={{
-                                    scale: [1, 1.2, 1],
-                                    rotate: 360
+                                    opacity: 1,
+                                    scale: [1, 1.1, 1],
+                                    rotate: [0, 360]
                                 }}
-                                exit={{ scale: 0, opacity: 0 }}
+                                exit={{ opacity: 0, scale: 0 }}
                                 transition={{
                                     scale: { repeat: Infinity, duration: 1 },
-                                    rotate: { duration: 2, repeat: Infinity, ease: "linear" }
+                                    rotate: { repeat: Infinity, duration: 3, ease: "linear" }
                                 }}
                             >
-                                <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_0_12px_rgba(124,234,175,0.8)]">
-                                    <circle cx="30" cy="30" r="25" fill={style.bg === 'bg-[#7ceaaf]' ? '#7ceaaf' : '#ffa5c5'} opacity="0.9" />
+                                <svg width="60" height="60" viewBox="0 0 60 60">
+                                    <circle cx="30" cy="30" r="28" fill={style.bg === 'bg-[#7ceaaf]' ? '#7ceaaf' : '#ffa5c5'} opacity="0.9" />
                                     <circle cx="30" cy="30" r="20" fill="white" opacity="0.3" />
                                     <circle cx="30" cy="30" r="15" fill={style.bg === 'bg-[#7ceaaf]' ? '#6cd99f' : '#ff8cb5'} />
                                     <text x="30" y="38" fontSize="20" textAnchor="middle" fill="white">
@@ -162,10 +225,12 @@ export const GameCanvas = ({
                     animate={{
                         left: getPlayerX(),
                         scale: combo > 10 ? [1, 1.05, 1] : 1,
+                        rotate: showCollision ? [-5, 5, -5, 5, 0] : 0
                     }}
                     transition={{
                         left: { duration: 0.3, ease: "easeOut" },
-                        scale: { repeat: Infinity, duration: 0.5 }
+                        scale: { repeat: Infinity, duration: 0.5 },
+                        rotate: { duration: 0.4, ease: "easeInOut" }
                     }}
                 >
                     <Rocket />

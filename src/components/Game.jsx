@@ -68,7 +68,7 @@ export const Game = () => {
                 <div className="flex gap-6 items-center justify-center max-w-[1600px] mx-auto">
                     {/* LEFT SIDEBAR - Market Cap Milestones */}
                     <div className="hidden xl:block w-64 flex-shrink-0">
-                        <MarketCapMilestones contractAddress="BJTkv1hk9pxRjVgFvEruxV7YHZKmSifJEdm7fCTspump" />
+                        <MarketCapMilestones contractAddress="FVvUHTxJCyDvJeoSVmfgRgy9DNKUP6CnjYxVLxA2pump" />
                     </div>
 
                     {/* CENTER - Main Game */}
